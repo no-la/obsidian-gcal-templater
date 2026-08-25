@@ -1,9 +1,9 @@
 import type GcalTemplaterPlugin from "./main";
 import type { StoredTokenSet } from "./types";
 
-const ACCESS_TOKEN_KEY = "google-calendar-templater.access-token";
-const REFRESH_TOKEN_KEY = "google-calendar-templater.refresh-token";
-const EXPIRES_AT_KEY = "google-calendar-templater.expires-at";
+const ACCESS_TOKEN_KEY = "google-calendar-templater-access-token";
+const REFRESH_TOKEN_KEY = "google-calendar-templater-refresh-token";
+const EXPIRES_AT_KEY = "google-calendar-templater-expires-at";
 
 export class TokenStore {
   constructor(private plugin: GcalTemplaterPlugin) {}
