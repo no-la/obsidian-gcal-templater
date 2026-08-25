@@ -96,6 +96,7 @@ export class GcalTemplaterSettingTab extends PluginSettingTab {
       .addButton((button) =>
         button.setButtonText("Connect").setCta().onClick(async () => {
           try {
+            await this.plugin.loadSettings();
             await this.plugin.auth.connect();
             new Notice("Google Calendar connected.");
           } catch (error) {

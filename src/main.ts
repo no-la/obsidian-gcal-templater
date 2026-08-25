@@ -44,6 +44,7 @@ export default class GcalTemplaterPlugin extends Plugin {
       id: "connect-google-calendar",
       name: "Connect Google Calendar",
       callback: async () => {
+        await this.loadSettings();
         await this.auth.connect();
         new Notice("Google Calendar connected.");
       },
