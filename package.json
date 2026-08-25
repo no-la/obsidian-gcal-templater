@@ -1,6 +1,6 @@
 {
   "name": "obsidian-gcal-templater",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Expose Google Calendar event queries to Obsidian Templater.",
   "main": "main.js",
   "scripts": {
