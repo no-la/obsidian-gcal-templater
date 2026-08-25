@@ -94,6 +94,7 @@ export class GoogleAuth {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
+      throw: false,
     });
 
     if (response.status < 200 || response.status >= 300) {
@@ -120,6 +121,7 @@ export class GoogleAuth {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: body.toString(),
+      throw: false,
     });
 
     if (response.status < 200 || response.status >= 300) {
