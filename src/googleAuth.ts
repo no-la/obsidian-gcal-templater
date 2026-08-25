@@ -97,7 +97,12 @@ export class GoogleAuth {
     });
 
     if (response.status < 200 || response.status >= 300) {
-      throw new Error(`Google token exchange failed: ${response.status}`);
+      const detail = googleErrorDetail(response.json, response.text);
+      console.error("Google Calendar Templater token exchange failed", {
+        status: response.status,
+        detail,
+      });
+      throw new Error(`Google token exchange failed: ${response.status}${detail ? ` ${detail}` : ""}`);
     }
 
     return response.json as GoogleTokenResponse;
@@ -118,8 +123,13 @@ export class GoogleAuth {
     });
 
     if (response.status < 200 || response.status >= 300) {
+      const detail = googleErrorDetail(response.json, response.text);
+      console.error("Google Calendar Templater token refresh failed", {
+        status: response.status,
+        detail,
+      });
       new Notice("Google Calendar token refresh failed. Reconnect from plugin settings.");
-      throw new Error(`Google token refresh failed: ${response.status}`);
+      throw new Error(`Google token refresh failed: ${response.status}${detail ? ` ${detail}` : ""}`);
     }
 
     return response.json as GoogleTokenResponse;
@@ -172,7 +182,7 @@ function waitForOAuthCallback(expectedState: string): Promise<string> {
       }
 
       cleanup();
-      response.end("Google Calendar connected. You can close this window.");
+      response.end("Google Calendar authorization received. Check Obsidian to confirm token exchange. You can close this window.");
       resolve(code);
     });
 
@@ -183,6 +193,17 @@ function waitForOAuthCallback(expectedState: string): Promise<string> {
       server?.close();
     }
   });
+}
+
+function googleErrorDetail(json: unknown, text: string): string {
+  if (isGoogleError(json)) {
+    return [json.error, json.error_description].filter(Boolean).join(": ");
+  }
+  return text?.trim() ?? "";
+}
+
+function isGoogleError(value: unknown): value is { error?: string; error_description?: string } {
+  return typeof value === "object" && value !== null && ("error" in value || "error_description" in value);
 }
 
 function base64Url(buffer: Buffer): string {
