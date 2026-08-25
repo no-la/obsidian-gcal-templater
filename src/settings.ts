@@ -90,6 +90,16 @@ export class GcalTemplaterSettingTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
+      .setName("Check connection")
+      .setDesc("Checks whether a Google refresh token is stored locally.")
+      .addButton((button) =>
+        button.setButtonText("Check").onClick(async () => {
+          const connected = await this.plugin.auth.isConnected();
+          new Notice(connected ? "Google Calendar is connected." : "Google Calendar is not connected.");
+        }),
+      );
+
+    new Setting(containerEl)
       .setName("Disconnect")
       .setDesc("Removes locally stored Google Calendar tokens.")
       .addButton((button) =>

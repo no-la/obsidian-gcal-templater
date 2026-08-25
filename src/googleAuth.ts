@@ -52,6 +52,11 @@ export class GoogleAuth {
     await this.tokenStore.clear();
   }
 
+  async isConnected(): Promise<boolean> {
+    const tokens = await this.tokenStore.getTokens();
+    return Boolean(tokens.refreshToken);
+  }
+
   async getAccessToken(): Promise<string> {
     const tokens = await this.tokenStore.getTokens();
     if (tokens.accessToken && tokens.expiresAt && tokens.expiresAt > Date.now() + 60_000) {
@@ -159,9 +164,10 @@ function waitForOAuthCallback(expectedState: string): Promise<string> {
       }
 
       if (!code || state !== expectedState) {
+        const reason = !code ? "missing authorization code" : "state mismatch";
         cleanup();
-        response.end("Invalid Google Calendar authorization response. You can close this window.");
-        reject(new Error("Invalid Google OAuth response."));
+        response.end(`Invalid Google Calendar authorization response: ${reason}. You can close this window.`);
+        reject(new Error(`Invalid Google OAuth response: ${reason}.`));
         return;
       }
 
