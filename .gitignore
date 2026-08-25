@@ -1,0 +1,12 @@
+node_modules
+main.js
+dateRange.js
+formatter.js
+googleAuth.js
+googleCalendar.js
+settings.js
+tokenStore.js
+types.js
+data.json
+.env
+.DS_Store
