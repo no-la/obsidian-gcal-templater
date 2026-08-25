@@ -17,6 +17,7 @@ export class GoogleAuth {
   constructor(
     private tokenStore: TokenStore,
     private getClientId: () => string,
+    private getClientSecret: () => string,
   ) {}
 
   async connect(): Promise<void> {
@@ -88,6 +89,7 @@ export class GoogleAuth {
       grant_type: "authorization_code",
       redirect_uri: REDIRECT_URI,
     });
+    this.appendClientSecret(body);
 
     const response = await requestUrl({
       url: TOKEN_URL,
@@ -115,6 +117,7 @@ export class GoogleAuth {
       refresh_token: refreshToken,
       grant_type: "refresh_token",
     });
+    this.appendClientSecret(body);
 
     const response = await requestUrl({
       url: TOKEN_URL,
@@ -143,6 +146,13 @@ export class GoogleAuth {
       throw new Error("Google OAuth client ID is missing.");
     }
     return clientId;
+  }
+
+  private appendClientSecret(body: URLSearchParams): void {
+    const clientSecret = this.getClientSecret().trim();
+    if (clientSecret) {
+      body.set("client_secret", clientSecret);
+    }
   }
 }
 

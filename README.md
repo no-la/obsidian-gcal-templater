@@ -29,7 +29,8 @@ tR += await window.gcalEvents({
 2. client type は Desktop app / Installed app を使う
 3. 必要なら redirect URI に `http://127.0.0.1:42813/callback` を追加する
 4. Obsidian の plugin 設定に client ID を貼る
-5. **Connect Google Calendar** を押して Google 認証を完了する
+5. Google が `client_secret is missing` を返す場合は client secret も貼る
+6. **Connect Google Calendar** を押して Google 認証を完了する
 
 要求する scope は読み取り専用です。
 
@@ -124,6 +125,8 @@ type GcalEventsOptions = {
 この plugin は desktop only です。
 
 OAuth token は Obsidian の `SecretStorage` を優先して保存します。利用中の Obsidian に programmatic SecretStorage API がない場合は fallback として plugin data に保存します。
+
+client secret は Google OAuth client によって要求される場合だけ設定します。Obsidian plugin 内では完全な秘密としては扱えないので、この plugin 専用の OAuth client を使ってください。
 
 ## English
 

@@ -4,6 +4,7 @@ import type { PluginSettings } from "./types";
 
 export const DEFAULT_SETTINGS: PluginSettings = {
   clientId: "",
+  clientSecret: "",
   defaultCalendarId: "primary",
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   markdownFormat: "- {{date}} {{time}} {{title}}{{location}}",
@@ -35,6 +36,20 @@ export class GcalTemplaterSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           }),
       );
+
+    new Setting(containerEl)
+      .setName("Google OAuth client secret")
+      .setDesc("Some Google OAuth clients require this during token exchange. It is stored in plugin data, so use a dedicated Google Cloud OAuth client.")
+      .addText((text) => {
+        text.inputEl.type = "password";
+        text
+          .setPlaceholder("GOCSPX-...")
+          .setValue(this.plugin.settings.clientSecret)
+          .onChange(async (value) => {
+            this.plugin.settings.clientSecret = value.trim();
+            await this.plugin.saveSettings();
+          });
+      });
 
     new Setting(containerEl)
       .setName("Default calendar ID")

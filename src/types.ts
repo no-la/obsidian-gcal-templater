@@ -22,6 +22,7 @@ export type GcalEvent = {
 
 export type PluginSettings = {
   clientId: string;
+  clientSecret: string;
   defaultCalendarId: string;
   timezone: string;
   markdownFormat: string;

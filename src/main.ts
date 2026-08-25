@@ -15,7 +15,11 @@ export default class GcalTemplaterPlugin extends Plugin {
     await this.loadSettings();
 
     const tokenStore = new TokenStore(this);
-    this.auth = new GoogleAuth(tokenStore, () => this.settings.clientId);
+    this.auth = new GoogleAuth(
+      tokenStore,
+      () => this.settings.clientId,
+      () => this.settings.clientSecret,
+    );
     this.calendar = new GoogleCalendarClient(
       () => this.auth.getAccessToken(),
       () => this.settings.defaultCalendarId,
