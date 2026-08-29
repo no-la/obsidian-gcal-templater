@@ -22,6 +22,7 @@ tR += await window.gcalEvents({
 - Expand recurring events with Google Calendar API
 - Render timed and all-day events as Markdown
 - Return raw event objects when needed
+- Filter or format raw events in Templater, including by Google event color ID
 - Store OAuth tokens with Obsidian SecretStorage when available
 
 ## Requirements
@@ -129,6 +130,47 @@ tR += "```json\n" + JSON.stringify(events, null, 2) + "\n```"
 %>
 ````
 
+Format raw events in Templater:
+
+```js
+<%*
+const formatEvent = (event) => {
+  if (event.allDay) return `- All day ${event.title}`
+
+  const start = moment(event.start).format("HH:mm")
+  const end = moment(event.end).format("HH:mm")
+  const location = event.location ? ` @ ${event.location}` : ""
+
+  return `- ${start}-${end} ${event.title}${location}`
+}
+
+const events = await window.gcalEvents({
+  from: tp.date.now("YYYY-MM-DD"),
+  to: tp.date.now("YYYY-MM-DD", 1),
+  format: "raw"
+})
+
+tR += events.map(formatEvent).join("\n")
+%>
+```
+
+Filter by Google Calendar event color:
+
+```js
+<%*
+const ignoredColorIds = new Set(["11"])
+
+const events = await window.gcalEvents({
+  from: tp.date.now("YYYY-MM-DD"),
+  to: tp.date.now("YYYY-MM-DD", 1),
+  format: "raw"
+})
+
+const visibleEvents = events.filter((event) => !ignoredColorIds.has(event.colorId))
+tR += visibleEvents.map((event) => `- ${event.title}`).join("\n")
+%>
+```
+
 Use a soft failure in templates:
 
 ```js
@@ -160,6 +202,22 @@ type GcalEventsOptions = {
   includeDeclined?: boolean;
 };
 ```
+
+```ts
+type GcalEvent = {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  location?: string;
+  calendarId: string;
+  colorId?: string;
+  htmlLink?: string;
+};
+```
+
+`colorId` is the Google Calendar event color ID. It is present only when an event has an explicit event color. If an event inherits its calendar color, `colorId` may be empty.
 
 `from` and `to` accept either `YYYY-MM-DD` or ISO datetime strings.
 
@@ -263,6 +321,26 @@ tR += await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
   to: tp.date.now("YYYY-MM-DD", 1)
 })
+%>
+```
+
+Daily note と Weekly note で表示形式を変えたい場合は、`format: "raw"` で取得して Templater 側で整形するのがおすすめです。
+
+```js
+<%*
+const ignoredColorIds = new Set(["11"])
+
+const events = await window.gcalEvents({
+  from: tp.date.now("YYYY-MM-DD"),
+  to: tp.date.now("YYYY-MM-DD", 1),
+  format: "raw"
+})
+
+const visibleEvents = events.filter((event) => !ignoredColorIds.has(event.colorId))
+tR += visibleEvents.map((event) => {
+  if (event.allDay) return `- All day ${event.title}`
+  return `- ${moment(event.start).format("HH:mm")}-${moment(event.end).format("HH:mm")} ${event.title}`
+}).join("\n")
 %>
 ```
 

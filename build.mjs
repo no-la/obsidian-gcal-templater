@@ -3,6 +3,7 @@ import ts from "typescript";
 
 const sourceFiles = [
   "dateRange",
+  "eventNormalizer",
   "formatter",
   "tokenStore",
   "googleAuth",
