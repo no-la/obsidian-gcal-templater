@@ -12,6 +12,7 @@ describe("formatEventsMarkdown", () => {
         end: "2026-08-25T01:00:00.000Z",
         allDay: false,
         calendarId: "primary",
+        colorId: "5",
       },
       {
         id: "2",

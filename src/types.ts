@@ -17,6 +17,7 @@ export type GcalEvent = {
   allDay: boolean;
   location?: string;
   calendarId: string;
+  colorId?: string;
   htmlLink?: string;
 };
 
@@ -55,6 +56,7 @@ export type GoogleCalendarEvent = {
   start: GoogleCalendarEventDate;
   end: GoogleCalendarEventDate;
   location?: string;
+  colorId?: string;
   htmlLink?: string;
   status?: string;
   attendees?: Array<{ self?: boolean; responseStatus?: string }>;

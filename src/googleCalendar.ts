@@ -1,5 +1,6 @@
 import { requestUrl } from "obsidian";
 import { toGoogleBoundary } from "./dateRange";
+import { normalizeEvent } from "./eventNormalizer";
 import type {
   GcalEvent,
   GcalEventsOptions,
@@ -54,20 +55,6 @@ export class GoogleCalendarClient {
       .map((event) => normalizeEvent(event, calendarId))
       .filter((event) => (options.includeAllDay ?? true) || !event.allDay);
   }
-}
-
-function normalizeEvent(event: GoogleCalendarEvent, calendarId: string): GcalEvent {
-  const allDay = Boolean(event.start.date);
-  return {
-    id: event.id,
-    title: event.summary || "(No title)",
-    start: event.start.dateTime ?? event.start.date ?? "",
-    end: event.end.dateTime ?? event.end.date ?? "",
-    allDay,
-    location: event.location,
-    calendarId,
-    htmlLink: event.htmlLink,
-  };
 }
 
 function isDeclinedBySelf(event: GoogleCalendarEvent): boolean {
