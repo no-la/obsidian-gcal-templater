@@ -1,7 +1,7 @@
 {
   "id": "obsidian-gcal-templater",
   "name": "Google Calendar Templater",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minAppVersion": "1.11.0",
   "description": "Expose a window.gcalEvents function that returns Google Calendar events for Templater templates.",
   "author": "no-la",
