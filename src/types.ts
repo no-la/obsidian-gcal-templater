@@ -3,7 +3,7 @@ export type OutputFormat = "markdown" | "raw";
 export type GcalEventsOptions = {
   from: string;
   to: string;
-  calendarId?: string;
+  calendarIds?: string[];
   format?: OutputFormat;
   includeAllDay?: boolean;
   includeDeclined?: boolean;
@@ -24,10 +24,14 @@ export type GcalEvent = {
 export type PluginSettings = {
   clientId: string;
   clientSecret: string;
-  defaultCalendarId: string;
+  defaultCalendarIds: string[];
   timezone: string;
   markdownFormat: string;
   tokenFallback?: StoredTokenSet;
+};
+
+export type LegacyPluginSettings = Partial<PluginSettings> & {
+  defaultCalendarId?: string;
 };
 
 export type StoredTokenSet = {

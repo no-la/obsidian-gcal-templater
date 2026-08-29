@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import ts from "typescript";
 
 const sourceFiles = [
+  "calendarIds",
   "dateRange",
   "eventNormalizer",
   "formatter",
