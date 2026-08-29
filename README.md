@@ -35,6 +35,22 @@ tR += await window.gcalEvents({
 
 This plugin is desktop only because it uses a local loopback OAuth callback.
 
+## Installation
+
+Download the latest release assets from GitHub Releases and place them under:
+
+```text
+.obsidian/plugins/obsidian-gcal-templater/
+```
+
+Required files:
+
+```text
+main.js
+manifest.json
+styles.css
+```
+
 ## Setup
 
 ### 1. Enable Google Calendar API
