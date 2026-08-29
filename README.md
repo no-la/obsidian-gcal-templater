@@ -1,47 +1,84 @@
 # Google Calendar Templater
 
-Google Calendar の予定を [[Templater]] から使うための Obsidian plugin です。
+Google Calendar Templater is an Obsidian plugin that exposes Google Calendar events to Templater templates.
 
-`window.gcalEvents()` を公開し、指定した日付範囲の予定を Markdown または raw object として返します。
+The plugin registers `window.gcalEvents()`. Templater can call it, wait for Google Calendar events, and insert the returned Markdown into the current note.
 
 ```js
 <%*
 tR += await window.gcalEvents({
   from: "2026-08-25",
-  to: "2026-08-31",
+  to: "2026-08-26",
   calendarId: "primary"
 })
 %>
 ```
 
-## できること
+## Features
 
-- Templater から Google Calendar の予定を取得する
-- `YYYY-MM-DD` または ISO datetime で日付範囲を指定する
-- 既定カレンダーまたは任意の `calendarId` を指定する
-- 繰り返し予定を展開して開始時刻順に取得する
-- 終日予定と時刻付き予定を Markdown に整形する
-- token は Obsidian の SecretStorage を優先して保存する
+- Fetch Google Calendar events from Templater
+- Query events by date range
+- Use `primary` or any Google Calendar ID
+- Expand recurring events with Google Calendar API
+- Render timed and all-day events as Markdown
+- Return raw event objects when needed
+- Store OAuth tokens with Obsidian SecretStorage when available
 
-## セットアップ
+## Requirements
 
-1. Google Cloud Console で OAuth 2.0 client ID を作る
-2. client type は Desktop app / Installed app を使う
-3. 必要なら redirect URI に `http://127.0.0.1:42813/callback` を追加する
-4. Obsidian の plugin 設定に client ID を貼る
-5. 同じ画面に表示されている client secret も貼る
-6. **Connect Google Calendar** を押して Google 認証を完了する
+- Obsidian desktop
+- Templater
+- A Google Cloud project
+- Google Calendar API enabled in that project
+- OAuth 2.0 desktop client ID and client secret
 
-要求する scope は読み取り専用です。
+This plugin is desktop only because it uses a local loopback OAuth callback.
+
+## Setup
+
+### 1. Enable Google Calendar API
+
+In Google Cloud Console, open your project and enable **Google Calendar API**.
+
+If this is missing, authentication can succeed but event fetching will fail with `403`.
+
+### 2. Create an OAuth client
+
+In Google Cloud Console:
+
+1. Open **Google Auth Platform**.
+2. Configure the consent screen.
+3. Create an OAuth 2.0 client.
+4. Choose **Desktop app** as the client type.
+5. Copy the client ID.
+6. Copy the client secret.
+
+Google may require the client secret during token exchange even for a desktop client. This plugin therefore supports both client ID and client secret.
+
+### 3. Configure the plugin
+
+In Obsidian:
+
+1. Open **Settings**.
+2. Open **Community plugins**.
+3. Open **Google Calendar Templater** settings.
+4. Paste the Google OAuth client ID.
+5. Paste the Google OAuth client secret.
+6. Set the timezone, for example `Asia/Tokyo`.
+7. Press **Connect Google Calendar**.
+8. Approve access in the browser.
+9. Return to Obsidian and press **Check connection**.
+
+The plugin requests read-only scopes:
 
 ```text
 https://www.googleapis.com/auth/calendar.events.readonly
 https://www.googleapis.com/auth/calendar.readonly
 ```
 
-## 使い方
+## Usage
 
-日次ノートに今日の予定を入れる例。
+Insert today's events:
 
 ```js
 <%*
@@ -52,7 +89,18 @@ tR += await window.gcalEvents({
 %>
 ```
 
-週の予定を入れる例。
+Insert tomorrow's events:
+
+```js
+<%*
+tR += await window.gcalEvents({
+  from: tp.date.now("YYYY-MM-DD", 1),
+  to: tp.date.now("YYYY-MM-DD", 2)
+})
+%>
+```
+
+Insert a fixed range:
 
 ```js
 <%*
@@ -60,21 +108,39 @@ tR += await window.gcalEvents({
   from: "2026-08-25",
   to: "2026-09-01",
   calendarId: "primary",
-  format: "markdown"
+  format: "markdown",
+  includeAllDay: true,
+  includeDeclined: false
 })
 %>
 ```
 
-raw object が欲しい場合。
+Return raw objects:
 
-```js
+````js
 <%*
 const events = await window.gcalEvents({
   from: "2026-08-25",
   to: "2026-09-01",
   format: "raw"
 })
-tR += JSON.stringify(events, null, 2)
+
+tR += "```json\n" + JSON.stringify(events, null, 2) + "\n```"
+%>
+````
+
+Use a soft failure in templates:
+
+```js
+<%*
+try {
+  tR += await window.gcalEvents({
+    from: tp.date.now("YYYY-MM-DD"),
+    to: tp.date.now("YYYY-MM-DD", 1)
+  })
+} catch (error) {
+  tR += `%% Google Calendar Templater: ${error.message} %%`
+}
 %>
 ```
 
@@ -95,15 +161,30 @@ type GcalEventsOptions = {
 };
 ```
 
-`to` は exclusive boundary として扱います。
+`from` and `to` accept either `YYYY-MM-DD` or ISO datetime strings.
 
-例えば `from: "2026-08-25"`、`to: "2026-08-26"` は 2026-08-25 の 1 日分です。
+Date-only values are interpreted in the configured timezone. `to` is exclusive, so this query returns events for August 25 only:
 
-## Markdown format
+```js
+await window.gcalEvents({
+  from: "2026-08-25",
+  to: "2026-08-26"
+})
+```
 
-設定画面の Markdown format では以下の token が使えます。
+## Markdown Format
 
-```ts
+The default Markdown format is configurable in plugin settings.
+
+Default:
+
+```md
+- {{date}} {{time}} {{title}}{{location}}
+```
+
+Available tokens:
+
+```text
 {{date}}
 {{time}}
 {{start}}
@@ -114,36 +195,75 @@ type GcalEventsOptions = {
 {{htmlLink}}
 ```
 
-既定値。
+## Security Notes
 
-```md
-- {{date}} {{time}} {{title}}{{location}}
+OAuth access tokens and refresh tokens are stored with Obsidian SecretStorage when available.
+
+The Google OAuth client secret is stored in plugin settings. Obsidian plugins run locally and cannot keep a client secret truly secret from the local user. Use an OAuth client dedicated to this plugin.
+
+## Troubleshooting
+
+### `Google Calendar is not connected`
+
+The plugin does not have a stored refresh token.
+
+Open plugin settings, press **Connect Google Calendar**, then press **Check connection**.
+
+### `client_secret is missing`
+
+Paste the Google OAuth client secret into plugin settings and reconnect.
+
+### `Google Calendar events.list failed: 403`
+
+The most common cause is that **Google Calendar API** is not enabled in the Google Cloud project.
+
+Enable Google Calendar API, then run the template again.
+
+### The template aborts
+
+Wrap the call in `try/catch` and return an Obsidian comment on failure:
+
+```js
+<%*
+try {
+  tR += await window.gcalEvents({
+    from: tp.date.now("YYYY-MM-DD"),
+    to: tp.date.now("YYYY-MM-DD", 1)
+  })
+} catch (error) {
+  tR += `%% Google Calendar Templater: ${error.message} %%`
+}
+%>
 ```
 
-## Notes
+## 日本語
 
-この plugin は desktop only です。
+Google Calendar Templater は、Obsidian の Templater から Google Calendar の予定を取得するためのプラグインです。
 
-OAuth token は Obsidian の `SecretStorage` を優先して保存します。利用中の Obsidian に programmatic SecretStorage API がない場合は fallback として plugin data に保存します。
+`window.gcalEvents()` を公開し、指定した日付範囲の予定を Markdown または raw object として返します。
 
-Google Cloud のデスクトップクライアントにも client secret が表示され、token exchange で要求されることがあります。この plugin では client secret も設定できます。
+### セットアップ
 
-ただし Obsidian plugin 内では client secret を完全な秘密として扱えません。この plugin 専用の OAuth client を使ってください。
+1. Google Cloud Console で Google Calendar API を有効化する
+2. Google Auth Platform で OAuth consent screen を設定する
+3. OAuth 2.0 client を作る
+4. client type は **Desktop app** を選ぶ
+5. client ID と client secret をコピーする
+6. Obsidian の Google Calendar Templater 設定に貼る
+7. timezone を設定する
+8. **Connect Google Calendar** を押す
+9. ブラウザで許可する
+10. Obsidian に戻って **Check connection** を押す
 
-## English
-
-Google Calendar Templater is an Obsidian plugin that exposes `window.gcalEvents()` for Templater templates.
-
-It fetches Google Calendar events for a date range and returns Markdown by default.
+### 使用例
 
 ```js
 <%*
 tR += await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
-  to: tp.date.now("YYYY-MM-DD", 1),
-  format: "markdown"
+  to: tp.date.now("YYYY-MM-DD", 1)
 })
 %>
 ```
 
-The plugin uses Google OAuth 2.0 with PKCE and requests read-only calendar scopes.
+`to` は exclusive boundary です。`from: "2026-08-25"`、`to: "2026-08-26"` は 2026-08-25 の 1 日分として扱います。
