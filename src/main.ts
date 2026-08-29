@@ -1,10 +1,11 @@
 import { Notice, Plugin } from "obsidian";
+import { dedupeCalendarIds } from "./calendarIds";
 import { formatEventsMarkdown } from "./formatter";
 import { GoogleAuth } from "./googleAuth";
 import { GoogleCalendarClient } from "./googleCalendar";
 import { GcalTemplaterSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { TokenStore } from "./tokenStore";
-import type { GcalEventsOptions, PluginSettings } from "./types";
+import type { GcalEventsOptions, LegacyPluginSettings, PluginSettings } from "./types";
 
 export default class GcalTemplaterPlugin extends Plugin {
   settings: PluginSettings;
@@ -22,7 +23,7 @@ export default class GcalTemplaterPlugin extends Plugin {
     );
     this.calendar = new GoogleCalendarClient(
       () => this.auth.getAccessToken(),
-      () => this.settings.defaultCalendarId,
+      () => this.settings.defaultCalendarIds,
       () => this.settings.timezone,
     );
 
@@ -58,10 +59,27 @@ export default class GcalTemplaterPlugin extends Plugin {
   }
 
   async loadSettings() {
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+    this.settings = normalizeSettings(await this.loadData());
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
   }
+}
+
+function normalizeSettings(data: LegacyPluginSettings | null): PluginSettings {
+  const settings = Object.assign({}, DEFAULT_SETTINGS, data);
+  const defaultCalendarIds =
+    data?.defaultCalendarIds ??
+    (data?.defaultCalendarId ? [data.defaultCalendarId] : DEFAULT_SETTINGS.defaultCalendarIds);
+
+  return {
+    ...settings,
+    defaultCalendarIds: normalizeCalendarIds(defaultCalendarIds),
+  };
+}
+
+function normalizeCalendarIds(calendarIds: string[]): string[] {
+  const normalized = dedupeCalendarIds(calendarIds);
+  return normalized.length > 0 ? normalized : ["primary"];
 }

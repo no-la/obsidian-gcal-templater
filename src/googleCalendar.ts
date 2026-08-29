@@ -1,4 +1,5 @@
 import { requestUrl } from "obsidian";
+import { normalizeCalendarIds } from "./calendarIds";
 import { toGoogleBoundary } from "./dateRange";
 import { normalizeEvent } from "./eventNormalizer";
 import type {
@@ -11,16 +12,44 @@ import type {
 export class GoogleCalendarClient {
   constructor(
     private getAccessToken: () => Promise<string>,
-    private getDefaultCalendarId: () => string,
+    private getDefaultCalendarIds: () => string[],
     private getTimezone: () => string,
   ) {}
 
   async getEvents(options: GcalEventsOptions): Promise<GcalEvent[]> {
     const timezone = this.getTimezone();
-    const calendarId = options.calendarId || this.getDefaultCalendarId() || "primary";
+    const calendarIds = normalizeCalendarIds(options.calendarIds, this.getDefaultCalendarIds());
     const timeMin = toGoogleBoundary(options.from, timezone);
     const timeMax = toGoogleBoundary(options.to, timezone);
     const accessToken = await this.getAccessToken();
+
+    const events = await Promise.all(
+      calendarIds.map((calendarId) =>
+        this.getEventsForCalendar({
+          accessToken,
+          calendarId,
+          timeMin,
+          timeMax,
+          timezone,
+          includeAllDay: options.includeAllDay ?? true,
+          includeDeclined: options.includeDeclined ?? false,
+        }),
+      ),
+    );
+
+    return events.flat().sort(compareEventsByStart);
+  }
+
+  private async getEventsForCalendar(options: {
+    accessToken: string;
+    calendarId: string;
+    timeMin: string;
+    timeMax: string;
+    timezone: string;
+    includeAllDay: boolean;
+    includeDeclined: boolean;
+  }): Promise<GcalEvent[]> {
+    const { accessToken, calendarId, timeMin, timeMax, timezone, includeAllDay, includeDeclined } = options;
 
     const params = new URLSearchParams({
       timeMin,
@@ -51,10 +80,19 @@ export class GoogleCalendarClient {
 
     const data = response.json as GoogleEventsResponse;
     return (data.items ?? [])
-      .filter((event) => (options.includeDeclined ?? false) || !isDeclinedBySelf(event))
+      .filter((event) => includeDeclined || !isDeclinedBySelf(event))
       .map((event) => normalizeEvent(event, calendarId))
-      .filter((event) => (options.includeAllDay ?? true) || !event.allDay);
+      .filter((event) => includeAllDay || !event.allDay);
   }
+}
+
+function compareEventsByStart(a: GcalEvent, b: GcalEvent): number {
+  return eventStartTime(a) - eventStartTime(b);
+}
+
+function eventStartTime(event: GcalEvent): number {
+  const value = new Date(event.start).getTime();
+  return Number.isNaN(value) ? Number.MAX_SAFE_INTEGER : value;
 }
 
 function isDeclinedBySelf(event: GoogleCalendarEvent): boolean {

@@ -9,7 +9,7 @@ The plugin registers `window.gcalEvents()`. Templater can call it, wait for Goog
 tR += await window.gcalEvents({
   from: "2026-08-25",
   to: "2026-08-26",
-  calendarId: "primary"
+  calendarIds: ["primary"]
 })
 %>
 ```
@@ -18,7 +18,7 @@ tR += await window.gcalEvents({
 
 - Fetch Google Calendar events from Templater
 - Query events by date range
-- Use `primary` or any Google Calendar ID
+- Use one or more Google Calendar IDs
 - Expand recurring events with Google Calendar API
 - Render timed and all-day events as Markdown
 - Return raw event objects when needed
@@ -81,10 +81,11 @@ In Obsidian:
 3. Open **Google Calendar Templater** settings.
 4. Paste the Google OAuth client ID.
 5. Paste the Google OAuth client secret.
-6. Set the timezone, for example `Asia/Tokyo`.
-7. Press **Connect Google Calendar**.
-8. Approve access in the browser.
-9. Return to Obsidian and press **Check connection**.
+6. Set the default calendar IDs, one ID per line.
+7. Set the timezone, for example `Asia/Tokyo`.
+8. Press **Connect Google Calendar**.
+9. Approve access in the browser.
+10. Return to Obsidian and press **Check connection**.
 
 The plugin requests read-only scopes:
 
@@ -124,7 +125,10 @@ Insert a fixed range:
 tR += await window.gcalEvents({
   from: "2026-08-25",
   to: "2026-09-01",
-  calendarId: "primary",
+  calendarIds: [
+    "primary",
+    "nola.for.obsidian@gmail.com"
+  ],
   format: "markdown",
   includeAllDay: true,
   includeDeclined: false
@@ -163,6 +167,7 @@ const formatEvent = (event) => {
 const events = await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
   to: tp.date.now("YYYY-MM-DD", 1),
+  calendarIds: ["primary"],
   format: "raw"
 })
 
@@ -179,6 +184,7 @@ const ignoredColorIds = new Set(["11"])
 const events = await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
   to: tp.date.now("YYYY-MM-DD", 1),
+  calendarIds: ["primary"],
   format: "raw"
 })
 
@@ -194,7 +200,8 @@ Use a soft failure in templates:
 try {
   tR += await window.gcalEvents({
     from: tp.date.now("YYYY-MM-DD"),
-    to: tp.date.now("YYYY-MM-DD", 1)
+    to: tp.date.now("YYYY-MM-DD", 1),
+    calendarIds: ["primary"]
   })
 } catch (error) {
   tR += `%% Google Calendar Templater: ${error.message} %%`
@@ -212,7 +219,7 @@ window.gcalEvents(options: GcalEventsOptions): Promise<string | GcalEvent[]>
 type GcalEventsOptions = {
   from: string;
   to: string;
-  calendarId?: string;
+  calendarIds?: string[];
   format?: "markdown" | "raw";
   includeAllDay?: boolean;
   includeDeclined?: boolean;
@@ -242,7 +249,8 @@ Date-only values are interpreted in the configured timezone. `to` is exclusive, 
 ```js
 await window.gcalEvents({
   from: "2026-08-25",
-  to: "2026-08-26"
+  to: "2026-08-26",
+  calendarIds: ["primary"]
 })
 ```
 
@@ -324,10 +332,11 @@ Google Calendar Templater は、Obsidian の Templater から Google Calendar �
 4. client type は **Desktop app** を選ぶ
 5. client ID と client secret をコピーする
 6. Obsidian の Google Calendar Templater 設定に貼る
-7. timezone を設定する
-8. **Connect Google Calendar** を押す
-9. ブラウザで許可する
-10. Obsidian に戻って **Check connection** を押す
+7. default calendar IDs を 1 行に 1 つずつ設定する
+8. timezone を設定する
+9. **Connect Google Calendar** を押す
+10. ブラウザで許可する
+11. Obsidian に戻って **Check connection** を押す
 
 ### 使用例
 
@@ -335,7 +344,8 @@ Google Calendar Templater は、Obsidian の Templater から Google Calendar �
 <%*
 tR += await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
-  to: tp.date.now("YYYY-MM-DD", 1)
+  to: tp.date.now("YYYY-MM-DD", 1),
+  calendarIds: ["primary"]
 })
 %>
 ```
@@ -349,6 +359,7 @@ const ignoredColorIds = new Set(["11"])
 const events = await window.gcalEvents({
   from: tp.date.now("YYYY-MM-DD"),
   to: tp.date.now("YYYY-MM-DD", 1),
+  calendarIds: ["primary"],
   format: "raw"
 })
 

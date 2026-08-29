@@ -5,7 +5,7 @@ import type { PluginSettings } from "./types";
 export const DEFAULT_SETTINGS: PluginSettings = {
   clientId: "",
   clientSecret: "",
-  defaultCalendarId: "primary",
+  defaultCalendarIds: ["primary"],
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
   markdownFormat: "- {{date}} {{time}} {{title}}{{location}}",
 };
@@ -52,14 +52,18 @@ export class GcalTemplaterSettingTab extends PluginSettingTab {
       });
 
     new Setting(containerEl)
-      .setName("Default calendar ID")
-      .setDesc("Use primary or a specific Google Calendar ID.")
-      .addText((text) =>
+      .setName("Default calendar IDs")
+      .setDesc("One Google Calendar ID per line. Used when calendarIds is omitted.")
+      .addTextArea((text) =>
         text
           .setPlaceholder("primary")
-          .setValue(this.plugin.settings.defaultCalendarId)
+          .setValue(this.plugin.settings.defaultCalendarIds.join("\n"))
           .onChange(async (value) => {
-            this.plugin.settings.defaultCalendarId = value.trim() || "primary";
+            const calendarIds = value
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+            this.plugin.settings.defaultCalendarIds = calendarIds.length > 0 ? calendarIds : ["primary"];
             await this.plugin.saveSettings();
           }),
       );
