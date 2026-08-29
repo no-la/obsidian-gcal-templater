@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Verify manifest version
+        run: |
+          manifest_version="$(node -p "require('./manifest.json').version")"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$manifest_version" != "$tag_version" ]; then
+            echo "manifest.json version ($manifest_version) does not match tag ($tag_version)"
+            exit 1
+          fi
+
+      - name: Package plugin
+        run: zip -j "obsidian-gcal-templater-${GITHUB_REF_NAME#v}.zip" manifest.json main.js styles.css
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            main.js manifest.json styles.css "obsidian-gcal-templater-${GITHUB_REF_NAME#v}.zip" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
